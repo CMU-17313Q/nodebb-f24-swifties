@@ -1,6 +1,5 @@
 'use strict';
 
-
 define('forum/chats', [
 	'components',
 	'mousetrap',
@@ -45,6 +44,25 @@ define('forum/chats', [
 	});
 
 	Chats.init = function () {
+	// Fetch and display saved reactions
+		socket.emit('plugins.chat.getReactionsForRoom', { roomId: ajaxify.data.roomId }, function (err, reactions) {
+			if (err) {
+				console.error('Error fetching reactions:', err);
+				return;
+			}
+
+			const chatBox = $('[component="chat/message/content"]');
+			reactions.forEach(function (reaction) {
+				const reactionElement = `<li class="chat-message">
+					<span>${reaction.username} reacted with ${reaction.emoji} to message "${reaction.messageContent}"</span>
+				</li>`;
+				chatBox.append(reactionElement);
+			});
+
+			// Optionally, scroll to the bottom after loading reactions
+			chatBox.scrollTop(chatBox[0].scrollHeight);
+		});
+		// Existing initialization code
 		if (!utils.isMobile()) {
 			$('.chats-full [data-bs-toggle="tooltip"]').tooltip({
 				trigger: 'hover',
@@ -58,16 +76,12 @@ define('forum/chats', [
 			Chats.addSocketListeners();
 			Chats.addGlobalEventListeners();
 		}
-
 		recentChats.init();
-
 		Chats.addEventListeners();
 		Chats.setActive(ajaxify.data.roomId);
-
 		if (env === 'md' || env === 'lg' || env === 'xl' || env === 'xxl') {
 			Chats.addHotkeys();
 		}
-
 		Chats.initialised = true;
 		const chatContentEl = $('[component="chat/message/content"]');
 		messages.wrapImagesInLinks(chatContentEl);
@@ -83,15 +97,16 @@ define('forum/chats', [
 			messages.scrollToBottomAfterImageLoad(chatContentEl);
 		}
 		create.init();
-
 		hooks.fire('action:chat.loaded', $('.chats-full'));
 	};
 
 	Chats.addEventListeners = function () {
+		console.log('fefe');
 		const { roomId } = ajaxify.data;
 		const mainWrapper = $('[component="chat/main-wrapper"]');
 		const chatMessageContent = $('[component="chat/message/content"]');
 		const chatControls = components.get('chat/controls');
+		// Chats.addReactionClickHandler(components.get('chat/message/window'));
 		Chats.addSendHandlers(roomId, $('.chat-input'), $('.expanded-chat button[data-action="send"]'));
 		Chats.addPopoutHandler();
 		Chats.addActionHandlers(components.get('chat/message/window'), roomId);
@@ -421,7 +436,27 @@ define('forum/chats', [
 		});
 	};
 
+	Chats.sendReaction = function (messageId, emoji, roomId) {
+		console.log('Sending reaction:', emoji, 'to room:', roomId);
+		// Emit a socket event to send the reaction to the server with roomId
+		socket.emit('plugins.chat.sendReaction', { messageId, emoji, roomId }, function (err, response) {
+			if (err) {
+				return app.alertError(err.message);
+			}
+			console.log('Reaction sent successfully:', response);
+		});
+	};
+	function showEmojiMenu($button, $messageEl) {
+		console.log('showMneu');
+		// Find the emoji menu within the message element
+		const $emojiMenu = $messageEl.find('.emoji-menu');
+		// Hide any other open emoji menus
+		$('.emoji-menu').not($emojiMenu).hide();
+		// Toggle the visibility of the emoji menu
+		$emojiMenu.toggle();
+	}
 	Chats.addActionHandlers = function (element, roomId) {
+		console.log('actionhendler', element);
 		element.on('click', '[data-mid] [data-action]', function () {
 			const msgEl = $(this).parents('[data-mid]');
 			const messageId = msgEl.attr('data-mid');
@@ -441,15 +476,33 @@ define('forum/chats', [
 					messages.restore(messageId, roomId);
 					break;
 				case 'pin':
+					console.log('pin in chats');
 					pinnedMessages.pin(messageId, roomId);
 					break;
 				case 'unpin':
 					pinnedMessages.unpin(messageId, roomId);
 					break;
+				case 'react':
+					// Call the function to show the emoji menu
+					showEmojiMenu($(this), msgEl);
+					break;
 			}
 		});
+		element.on('click', '[data-mid] .emoji-option', function (e) {
+			e.preventDefault();
+			e.stopPropagation(); // Prevent event from bubbling up
+			const $emojiOption = $(this);
+			const emoji = $emojiOption.attr('data-emoji');
+			const msgEl = $emojiOption.closest('[data-mid]');
+			const messageId = msgEl.attr('data-mid');
+			const roomId = ajaxify.data.roomId; // Fetch the roomId
+			console.log('Emoji clicked:', emoji, 'in room:', roomId);
+			// Hide the emoji menu
+			$emojiOption.closest('.emoji-menu').hide();
+			// Send the reaction to the server
+			Chats.sendReaction(messageId, emoji, roomId); // Include roomId
+		});
 	};
-
 	Chats.addHotkeys = function () {
 		mousetrap.bind('ctrl+up', function () {
 			const activeContact = $('.chats-list .active');
@@ -532,6 +585,7 @@ define('forum/chats', [
 	};
 
 	Chats.addRenameHandler = function (roomId, buttonEl) {
+		console.log('rename');
 		buttonEl.on('click', async function () {
 			const { roomName } = await api.get(`/chats/${roomId}`);
 			const html = await app.parseAndTranslate('modals/rename-room', {
@@ -709,7 +763,28 @@ define('forum/chats', [
 			}
 		});
 
+		socket.on('event:reactionMessage', function (data) {
+			console.log('Reaction message received:', data);
+			const chatBox = $('[component="chat/message/content"]');
+			const reactionElement = `<li class="chat-message">
+				<span>${data.reactionMessage}</span>
+			</li>`;
+			chatBox.append(reactionElement);
+			chatBox.scrollTop(chatBox[0].scrollHeight);
+		});
+		socket.on('event:reactionsForRoom', function (reactions) {
+			const chatBox = $('[component="chat/message/content"]');
+			reactions.forEach(function (reaction) {
+				const reactionElement = `<li class="chat-message">
+					<span>${reaction.username} reacted with ${reaction.emoji} to message "${reaction.messageContent}"</span>
+				</li>`;
+				chatBox.append(reactionElement);
+			});
+			// Optionally, scroll to the bottom after loading reactions
+			chatBox.scrollTop(chatBox[0].scrollHeight);
+		});
 		socket.on('event:chats.receive', function (data) {
+			console.log('socketon');
 			if (chatModule.isFromBlockedUser(data.fromUid)) {
 				return;
 			}
@@ -720,17 +795,39 @@ define('forum/chats', [
 				}
 				data.message.self = data.self;
 				data.message.timestamp = Math.min(Date.now(), data.message.timestamp);
-				data.message.timestampISO = utils.toISOString(data.message.timestamp);
-				messages.appendChatMessage($('[component="chat/message/content"]'), data.message);
-
+				data.message.timestampISO = utils.toISOString(data.message.timestamp); 
+				// Ensure that fromUser data is present
+				if (!data.message.fromUser) {
+					data.message.fromUser = data.message.fromUser || app.user; // Fallback to current user if necessary
+				}		  
+				messages.appendChatMessage($('[component="chat/message/content"]'), data.message);		  
 				updateTeaser(data.roomId, {
-					content: utils.stripHTMLTags(utils.decodeHTMLEntities(data.message.content)),
-					user: data.message.fromUser,
-					timestampISO: data.message.timestampISO,
+				content: utils.stripHTMLTags(utils.decodeHTMLEntities(data.message.content)),
+				user: data.message.fromUser,
+				timestampISO: data.message.timestampISO,
 				});
 			}
 		});
-
+		socket.on('event:reactionAdded', function (data) {
+			console.log('Reaction added:', data);		
+			const { messageId, emoji } = data;			
+			// Find the message element in the chat based on the messageId
+			const msgEl = $(`[data-mid="${messageId}"]`);			
+			if (msgEl.length) {
+				// Append the reaction (emoji) to the message
+				let reactionsContainer = msgEl.find('.reactions-container');				
+				// If there's no reactions container, create one
+				if (reactionsContainer.length === 0) {
+					reactionsContainer = $('<div class="reactions-container"></div>');
+					msgEl.append(reactionsContainer);
+				}				
+				// Append the emoji to the reactions container
+				reactionsContainer.append(`<span class="reaction-emoji">${emoji}</span>`);
+			}
+		});
+		socket.on('event:reactionMessage', function (data) {
+			console.log('Reaction message received:', data); // Ensure this logs the received event
+		});
 		async function updateTeaser(roomId, teaser) {
 			const roomEl = $(`[data-roomid="${roomId}"]`);
 			if (roomEl.length) {
@@ -794,7 +891,7 @@ define('forum/chats', [
 			}
 			chatModule.updateTypingUserList($(`[component="chat/main-wrapper"][data-roomid="${data.roomId}"]`), data);
 		});
-	};
+	}
 
 	Chats.markChatPageElUnread = function (data) {
 		if (!ajaxify.data.template.chats) {
