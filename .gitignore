@@ -73,3 +73,4 @@ test.sh
 
 .docker/**
 !**/.gitkeep
+!node_modules\nodebb-theme-harmony\templates\partials\topics_list.tpl
