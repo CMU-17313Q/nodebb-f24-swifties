@@ -1,5 +1,5 @@
 'use strict';
-
+//
 define('forum/chats', [
 	'components',
 	'mousetrap',
