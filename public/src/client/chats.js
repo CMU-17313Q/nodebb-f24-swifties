@@ -1,5 +1,7 @@
 'use strict';
+
 // HI
+
 define('forum/chats', [
 	'components',
 	'mousetrap',
