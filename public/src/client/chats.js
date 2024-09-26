@@ -57,7 +57,7 @@ define('forum/chats', [
 			}
 		}
 	});
-	#
+	
 	Chats.init = function () {
 		// Fetch and display saved reactions
 		socket.emit(
