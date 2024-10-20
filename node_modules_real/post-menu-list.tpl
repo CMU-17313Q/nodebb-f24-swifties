@@ -127,6 +127,177 @@
 <li>
 	<a class="dropdown-item rounded-1 d-flex align-items-center gap-2" component="post/flagResolve" data-flagId="{posts.flags.flagId}" role="menuitem" href="#"><i class="fa fa-fw text-secondary fa-check"></i> [[topic:resolve-flag]]</a>
 </li>
+
 {{{ end }}}
 {{{ end }}}
 {{{ end }}}
+<li>
+    <a class="dropdown-item rounded-1 d-flex align-items-center gap-2" component="post/notes" role="menuitem" href="#" data-post-id="{posts.pid}">
+        <span class="menu-icon"><i class="fa fa-fw fa-sticky-note"></i></span> [[topic:manage-notes]]
+    </a>
+</li>
+
+<!-- Modal Structure -->
+<div id="notesModal" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -50%); width:400px; background-color:white; border:1px solid #ccc; z-index:10000; padding:20px;">
+    <div class="modal-header">
+        <h5>Manage Notes</h5>
+        <button id="closeModalBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+    </div>
+    <div class="modal-body">
+        <!-- New section to display saved notes -->
+        <div id="savedNotesDisplay" style="border:1px solid #ccc; padding:10px; min-height:50px; background-color:#f9f9f9; margin-bottom:15px;">
+            <!-- Saved notes will appear here -->
+        </div>
+        <!-- Textarea for adding new notes -->
+        <textarea id="userNotes" rows="5" style="width: 100%;" placeholder="Write your new note here..."></textarea>
+    </div>
+    <div class="modal-footer" style="margin-top: 10px; text-align: right;">
+        <button id="saveNotesBtn" style="padding:10px 20px; background-color:blue; color:white; border:none; cursor:pointer;">Save</button>
+        <button id="closeModalFooterBtn" style="padding:10px 20px; background-color:grey; color:white; border:none; cursor:pointer;">Close</button>
+    </div>
+</div>
+
+<script>
+// Function to safely parse JSON or return an empty array if invalid
+function safelyParseJSON(value) {
+    try {
+        return JSON.parse(value);
+    } catch (e) {
+        return [];  // Return an empty array if parsing fails
+    }
+}
+
+var currentPostId = null;  // Keep track of the current post being edited
+
+// Attach the event handler to the notes button
+document.addEventListener('click', function(e) {
+    const notesButton = e.target.closest('a[component="post/notes"]');
+
+    if (notesButton) {
+        e.preventDefault();
+
+        // Try to get the post element by traversing up the DOM tree
+        const postElement = notesButton.closest('[data-pid], [id^="post_"], [id^="p"]');
+
+        if (postElement) {
+            // Try to get the postId from data-pid or id attribute
+            if (postElement.hasAttribute('data-pid')) {
+                currentPostId = postElement.getAttribute('data-pid');
+            } else if (postElement.id) {
+                // id could be in the format 'post_12345' or 'p12345'
+                currentPostId = postElement.id.replace('post_', '').replace('p', '');
+            }
+        }
+
+        if (!currentPostId) {
+            console.error('Post ID not found!');
+            return;
+        }
+
+        var storageKey = 'postNotes_' + currentPostId;
+
+        console.log('Manage Notes button clicked for post:', currentPostId);
+
+        // Get existing notes from localStorage, safely parse them as an array
+        var existingNotes = safelyParseJSON(localStorage.getItem(storageKey)) || [];
+
+        // Clear the display area before adding notes
+        var savedNotesDisplay = document.getElementById('savedNotesDisplay');
+        savedNotesDisplay.innerHTML = ''; // Clear the content
+
+        // Display existing notes if they exist
+        if (existingNotes.length > 0) {
+            savedNotesDisplay.innerHTML = existingNotes.map(note => note + '<br>').join('');
+        } else {
+            savedNotesDisplay.innerHTML = 'No notes yet.';
+        }
+
+        // Clear the new note input field
+        document.getElementById('userNotes').value = '';
+
+        // Show the modal
+        document.getElementById('notesModal').style.display = 'block';
+
+        // Close the dropdown to avoid it interfering with future clicks
+        closeDropdownMenu(notesButton);
+
+        // Ensure the save button doesn't get multiple listeners attached
+        document.getElementById('saveNotesBtn').removeEventListener('click', handleSaveButtonClick); // Remove any previous listeners
+        document.getElementById('saveNotesBtn').addEventListener('click', handleSaveButtonClick); // Attach the new listener
+    }
+});
+
+// Function to handle the save button click
+function handleSaveButtonClick() {
+    if (!currentPostId) {
+        alert('Error: No post ID found.');
+        return;
+    }
+
+    var storageKey = 'postNotes_' + currentPostId;
+
+    // Get the new note from the textarea
+    var newNote = document.getElementById('userNotes').value.trim();
+
+    if (newNote === '') {
+        alert('Please write something before saving.');
+        return;
+    }
+
+    // Get existing notes from localStorage (safely parsed as an array)
+    var existingNotes = safelyParseJSON(localStorage.getItem(storageKey)) || [];
+
+    // Append the new note to the existing notes array
+    existingNotes.push(newNote);
+
+    // Save the updated notes array back to localStorage as a JSON string
+    localStorage.setItem(storageKey, JSON.stringify(existingNotes));
+
+    // Notify the user of success
+    alert('Note saved successfully.');
+
+    // Hide the modal
+    document.getElementById('notesModal').style.display = 'none';
+
+    // Reset the dropdown state after saving
+    resetDropdownState();
+}
+
+// Function to close the dropdown menu when a note button is clicked
+function closeDropdownMenu(buttonElement) {
+    const dropdownMenu = buttonElement.closest('.dropdown-menu');
+    if (dropdownMenu) {
+        dropdownMenu.classList.remove('show');
+        const parentDropdown = dropdownMenu.closest('.dropdown');
+        if (parentDropdown) {
+            parentDropdown.classList.remove('show');
+        }
+    }
+}
+
+// Handle the Close button clicks (both the close icon and the footer close button)
+function closeNotesModal() {
+    document.getElementById('notesModal').style.display = 'none';
+
+    // Reset the currentPostId and any states related to dropdowns
+    currentPostId = null;
+
+    // Reset the dropdown state after closing
+    resetDropdownState();
+}
+
+// Function to reset the dropdown state globally
+function resetDropdownState() {
+    // Reactivate any dropdown menus that may be stuck in the "open" state
+    const allDropdowns = document.querySelectorAll('.dropdown-menu.show');
+    allDropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+}
+
+document.getElementById('closeModalBtn').addEventListener('click', closeNotesModal);
+document.getElementById('closeModalFooterBtn').addEventListener('click', closeNotesModal);
+</script>
+
+
+
