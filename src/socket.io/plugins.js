@@ -1,3 +1,5 @@
+'use strict';
+
 const SocketPlugins = require.main.require('./src/socket.io/plugins');
 const user = require.main.require('./src/user');
 const db = require.main.require('./src/database'); // Assuming you're using a database module for message fetching
