@@ -114,5 +114,5 @@ function markAsRead(messageId) {
         messageElement.classList.add('all-read');
     }
 }
-
+// k
 </script>
