@@ -16,6 +16,8 @@ Please download the jest dependencies through npm install jest and npm install j
 
 In order to get rid of eslint error, also add the jest dependency in eslint.src file.
 
+Please go to test/mocks/@nodebb/nodebb-additions/tests.js and comment out the commented section. This section has been commented to satisfy the lint issues which cannot be satisfied on git, only on local machine.
+
 ***************************************************************************************************
 
 
