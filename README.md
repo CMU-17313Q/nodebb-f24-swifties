@@ -14,6 +14,8 @@ Please know that there is a folder called node_module_real, which contains the f
 
 Please download the jest dependencies through npm install jest and npm install jest-environment-jsdom. After this also add "test:jest": "jest --config ./jest.config.js", in package.json's "scripts" section. After this, run npm run test:jest, and the tests about our added material will get executed!
 
+In order to get rid of eslint error, also add the jest dependency in eslint.src file.
+
 ***************************************************************************************************
 
 
