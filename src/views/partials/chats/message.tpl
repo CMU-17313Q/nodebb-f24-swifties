@@ -1,5 +1,6 @@
 <!-- Check if the message is a reaction message -->
-{{{ if messages.reactionTo }}}
+{{{ if messages.reactionTo }}} <!--  -->
+
 <li component="chat/message" class="chat-message reaction-message mx-2 pe-2" data-mid="{messages.messageId}">
   <div class="message-body-wrapper">
     <div class="message-body ps-0 py-0 overflow-auto text-break">
@@ -77,7 +78,7 @@
                             <a href="#" class="dropdown-item rounded-1" data-action="restore" role="menuitem"><span class="d-inline-flex align-items-center gap-2"><i class="fa fa-fw fa-repeat text-muted"></i> [[topic:restore]]</span></a>
                         </li>
                         {{{ end }}}
-
+						#
                         {{{ if (isAdminOrGlobalMod || isOwner )}}}
                         <li>
                             <a href="#" class="dropdown-item rounded-1" data-action="pin" role="menuitem"><span class="d-inline-flex align-items-center gap-2"><i class="fa fa-fw fa-thumbtack text-muted"></i> [[modules:chat.pin-message]]</span></a>
