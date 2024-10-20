@@ -94,6 +94,7 @@
 			gap: 4px;
 		  }
 
+
 		  .chat-message-reactions .reaction:hover {
 			background-color: #ced4da;
 		  }
@@ -181,11 +182,11 @@
 	.page-user-chats.chat-loaded .bottombar {
 	  display: none !important;
 	}
-
+  
 	[component="chat/nav-wrapper"][data-loaded="1"] {
 	  display: none !important;
 	}
-
+  
 	[component="chat/nav-wrapper"][data-loaded="0"] + [component="chat/main-wrapper"] {
 	  display: none !important;
 	}
@@ -222,6 +223,7 @@
 	align-items: center;
 	gap: 4px;
   }
+
 
   .chat-message-reactions .reaction:hover {
 	background-color: #ced4da;
