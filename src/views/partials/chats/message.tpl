@@ -1,5 +1,6 @@
 <!-- Check if the message is a reaction message -->
 {{{ if messages.reactionTo }}} <!--  -->
+
 <li component="chat/message" class="chat-message reaction-message mx-2 pe-2" data-mid="{messages.messageId}">
   <div class="message-body-wrapper">
     <div class="message-body ps-0 py-0 overflow-auto text-break">
