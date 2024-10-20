@@ -41,7 +41,6 @@ module.exports = function () {
 	);
 
 	setupApiRoute(router, 'get', '/:tid', [], controllers.write.topics.get);
-	
 	setupApiRoute(
 		router,
 		'post',
