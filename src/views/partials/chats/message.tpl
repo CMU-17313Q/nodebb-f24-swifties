@@ -87,7 +87,7 @@
     background: none;
     cursor: pointer;
 }
-
+// l
 .read-receipt.all-read {
     color: blue; /* Change to blue when all users have clicked */
 }
