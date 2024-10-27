@@ -1,4 +1,5 @@
 /* eslint-disable import/order */
+// @flow
 
 'use strict';
 
